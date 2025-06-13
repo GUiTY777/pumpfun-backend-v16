@@ -38,7 +38,7 @@ def get_transaction(sig):
         "jsonrpc": "2.0",
         "id": 1,
         "method": "getTransaction",
-        "params": [sig, {"encoding": "jsonParsed"}]
+        "params": [sig, {"encoding": "jsonParsed", "commitment": "finalized"}]
     }
     try:
         res = requests.post(RPC_URL, json=body, timeout=10)
