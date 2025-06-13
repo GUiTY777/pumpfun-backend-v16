@@ -53,6 +53,8 @@ def extract_token_info(tx):
         return found
     instructions = tx.get("transaction", {}).get("message", {}).get("instructions", [])
     for ix in instructions:
+        if ix.get("program") == "spl-token":
+            print("➡️ Инструкция:", ix.get("parsed", {}))
         if ix.get("program") == "spl-token" and ix.get("parsed", {}).get("type") == "initializeMint":
             info = ix["parsed"]["info"]
             found.append({
@@ -73,8 +75,11 @@ def polling_loop():
             if sig in seen_signatures:
                 continue
             seen_signatures.add(sig)
+            print("🔍 Проверяем сигнатуру:", sig)
 
             tx = get_transaction(sig)
+            print("📦 Транзакция:", "OK" if tx else "None")
+
             new_tokens = extract_token_info(tx)
 
             for token in new_tokens:
@@ -83,7 +88,7 @@ def polling_loop():
                     print("🪙 Новый токен:", token)
                     save_tokens()
 
-            time.sleep(0.3)  # защита от rate-limit
+            time.sleep(0.3)
 
         time.sleep(10)
 
