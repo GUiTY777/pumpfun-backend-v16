@@ -7,7 +7,7 @@ from flask import Flask, jsonify
 
 app = Flask(__name__)
 CACHE_FILE = "tokens_cache.json"
-RPC_URL = "https://api.mainnet-beta.solana.com"
+RPC_URL = "https://api.mainnet-beta.solana.com"  # можно заменить на Triton или Shyft
 
 tokens = []
 seen_signatures = set()
@@ -16,7 +16,7 @@ def save_tokens():
     with open(CACHE_FILE, "w", encoding="utf-8") as f:
         json.dump(tokens, f, ensure_ascii=False, indent=2)
 
-def get_signatures(limit=50):
+def get_signatures(limit=20):
     body = {
         "jsonrpc": "2.0",
         "id": 1,
@@ -33,19 +33,23 @@ def get_signatures(limit=50):
         print("Ошибка getSignatures:", e)
         return []
 
-def get_transaction(sig):
+def get_transaction(sig, retries=3):
     body = {
         "jsonrpc": "2.0",
         "id": 1,
         "method": "getTransaction",
         "params": [sig, {"encoding": "jsonParsed", "commitment": "finalized"}]
     }
-    try:
-        res = requests.post(RPC_URL, json=body, timeout=10)
-        return res.json().get("result")
-    except Exception as e:
-        print("Ошибка getTransaction:", e)
-        return None
+    for attempt in range(retries):
+        try:
+            res = requests.post(RPC_URL, json=body, timeout=10)
+            result = res.json().get("result")
+            if result:
+                return result
+        except Exception as e:
+            print(f"Ошибка getTransaction (попытка {attempt+1}):", e)
+        time.sleep(1)
+    return None
 
 def extract_token_info(tx):
     found = []
@@ -70,7 +74,7 @@ def polling_loop():
     print("📡 Polling активирован...")
 
     while True:
-        sigs = get_signatures(limit=50)
+        sigs = get_signatures(limit=20)
         for sig in sigs:
             if sig in seen_signatures:
                 continue
@@ -88,7 +92,7 @@ def polling_loop():
                     print("🪙 Новый токен:", token)
                     save_tokens()
 
-            time.sleep(0.3)
+            time.sleep(0.5)
 
         time.sleep(10)
 
