@@ -7,7 +7,9 @@ from flask import Flask, jsonify
 
 app = Flask(__name__)
 CACHE_FILE = "tokens_cache.json"
-RPC_URL = "https://api.mainnet-beta.solana.com"  # можно заменить на Triton или Shyft
+
+# ✅ Используем Helius HTTP RPC
+RPC_URL = "https://mainnet.helius-rpc.com/?api-key=0221b876-8c23-4c04-b7f2-8e542abfea66"
 
 tokens = []
 seen_signatures = set()
@@ -71,7 +73,7 @@ def extract_token_info(tx):
 
 def polling_loop():
     global tokens
-    print("📡 Polling активирован...")
+    print("📡 Polling активирован (Helius RPC)")
 
     while True:
         sigs = get_signatures(limit=20)
